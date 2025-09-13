@@ -5,7 +5,8 @@ import TopicInput from './components/TopicInput';
 import LessonDisplay from './components/LessonDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
-import { generateGermanGrammarLesson, elaborateOnExamples, generateDiagram, generateMindMap } from './services/geminiService';
+import ChatAssistant from './components/ChatAssistant';
+import { generateGermanGrammarLesson, elaborateOnExamples, generateDiagram, generateMindMap, generateExercises } from './services/geminiService';
 
 const App: React.FC = () => {
     const [lesson, setLesson] = useState<string | null>(null);
@@ -21,6 +22,9 @@ const App: React.FC = () => {
     const [mindMap, setMindMap] = useState<string | null>(null);
     const [isGeneratingMindMap, setIsGeneratingMindMap] = useState<boolean>(false);
     const [mindMapError, setMindMapError] = useState<string | null>(null);
+    const [exercises, setExercises] = useState<string | null>(null);
+    const [isGeneratingExercises, setIsGeneratingExercises] = useState<boolean>(false);
+    const [exercisesError, setExercisesError] = useState<string | null>(null);
 
     const handleGenerateLesson = useCallback(async (topic: string) => {
         if (!topic.trim()) {
@@ -37,6 +41,8 @@ const App: React.FC = () => {
         setDiagramError(null);
         setMindMap(null);
         setMindMapError(null);
+        setExercises(null);
+        setExercisesError(null);
         setCurrentTopic(topic);
         
         try {
@@ -112,6 +118,26 @@ const App: React.FC = () => {
         }
     }, [currentTopic]);
 
+    const handleGenerateExercises = useCallback(async () => {
+        if (!currentTopic) return;
+
+        setIsGeneratingExercises(true);
+        setExercisesError(null);
+        setExercises(null);
+        try {
+            const generatedExercises = await generateExercises(currentTopic);
+            setExercises(generatedExercises);
+        } catch (e) {
+            if (e instanceof Error) {
+                setExercisesError(e.message);
+            } else {
+                setExercisesError("حدث خطأ غير متوقع أثناء إنشاء التمارين.");
+            }
+        } finally {
+            setIsGeneratingExercises(false);
+        }
+    }, [currentTopic]);
+
     return (
         <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center">
             <Header />
@@ -121,22 +147,29 @@ const App: React.FC = () => {
                     {isLoading && <LoadingSpinner />}
                     {error && <ErrorMessage message={error} />}
                     {lesson && currentTopic && (
-                        <LessonDisplay
-                            lesson={lesson}
-                            topic={currentTopic}
-                            onElaborate={handleElaborate}
-                            isElaborating={isElaborating}
-                            elaboration={elaboration}
-                            elaborationError={elaborationError}
-                            onGenerateDiagram={handleGenerateDiagram}
-                            isGeneratingDiagram={isGeneratingDiagram}
-                            diagram={diagram}
-                            diagramError={diagramError}
-                            onGenerateMindMap={handleGenerateMindMap}
-                            isGeneratingMindMap={isGeneratingMindMap}
-                            mindMap={mindMap}
-                            mindMapError={mindMapError}
-                         />
+                        <>
+                            <LessonDisplay
+                                lesson={lesson}
+                                topic={currentTopic}
+                                onElaborate={handleElaborate}
+                                isElaborating={isElaborating}
+                                elaboration={elaboration}
+                                elaborationError={elaborationError}
+                                onGenerateDiagram={handleGenerateDiagram}
+                                isGeneratingDiagram={isGeneratingDiagram}
+                                diagram={diagram}
+                                diagramError={diagramError}
+                                onGenerateMindMap={handleGenerateMindMap}
+                                isGeneratingMindMap={isGeneratingMindMap}
+                                mindMap={mindMap}
+                                mindMapError={mindMapError}
+                                onGenerateExercises={handleGenerateExercises}
+                                isGeneratingExercises={isGeneratingExercises}
+                                exercises={exercises}
+                                exercisesError={exercisesError}
+                            />
+                            <ChatAssistant topic={currentTopic} />
+                        </>
                     )}
                     {!isLoading && !error && !lesson && (
                          <div className="text-center text-gray-400 p-8 bg-gray-900/50 rounded-lg">
