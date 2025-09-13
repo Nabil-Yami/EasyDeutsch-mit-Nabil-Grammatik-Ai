@@ -5,7 +5,7 @@ import TopicInput from './components/TopicInput';
 import LessonDisplay from './components/LessonDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
-import { generateGermanGrammarLesson, elaborateOnExamples, generateDiagram } from './services/geminiService';
+import { generateGermanGrammarLesson, elaborateOnExamples, generateDiagram, generateMindMap } from './services/geminiService';
 
 const App: React.FC = () => {
     const [lesson, setLesson] = useState<string | null>(null);
@@ -18,6 +18,9 @@ const App: React.FC = () => {
     const [diagram, setDiagram] = useState<string | null>(null);
     const [isGeneratingDiagram, setIsGeneratingDiagram] = useState<boolean>(false);
     const [diagramError, setDiagramError] = useState<string | null>(null);
+    const [mindMap, setMindMap] = useState<string | null>(null);
+    const [isGeneratingMindMap, setIsGeneratingMindMap] = useState<boolean>(false);
+    const [mindMapError, setMindMapError] = useState<string | null>(null);
 
     const handleGenerateLesson = useCallback(async (topic: string) => {
         if (!topic.trim()) {
@@ -32,6 +35,8 @@ const App: React.FC = () => {
         setElaborationError(null);
         setDiagram(null);
         setDiagramError(null);
+        setMindMap(null);
+        setMindMapError(null);
         setCurrentTopic(topic);
         
         try {
@@ -87,6 +92,26 @@ const App: React.FC = () => {
         }
     }, [currentTopic]);
 
+    const handleGenerateMindMap = useCallback(async () => {
+        if (!currentTopic) return;
+
+        setIsGeneratingMindMap(true);
+        setMindMapError(null);
+        setMindMap(null);
+        try {
+            const generatedMindMap = await generateMindMap(currentTopic);
+            setMindMap(generatedMindMap);
+        } catch (e) {
+            if (e instanceof Error) {
+                setMindMapError(e.message);
+            } else {
+                setMindMapError("حدث خطأ غير متوقع أثناء إنشاء الخريطة الذهنية.");
+            }
+        } finally {
+            setIsGeneratingMindMap(false);
+        }
+    }, [currentTopic]);
+
     return (
         <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center">
             <Header />
@@ -107,6 +132,10 @@ const App: React.FC = () => {
                             isGeneratingDiagram={isGeneratingDiagram}
                             diagram={diagram}
                             diagramError={diagramError}
+                            onGenerateMindMap={handleGenerateMindMap}
+                            isGeneratingMindMap={isGeneratingMindMap}
+                            mindMap={mindMap}
+                            mindMapError={mindMapError}
                          />
                     )}
                     {!isLoading && !error && !lesson && (

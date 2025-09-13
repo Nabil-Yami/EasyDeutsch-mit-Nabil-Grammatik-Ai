@@ -13,6 +13,10 @@ interface LessonDisplayProps {
     isGeneratingDiagram: boolean;
     diagram: string | null;
     diagramError: string | null;
+    onGenerateMindMap: () => void;
+    isGeneratingMindMap: boolean;
+    mindMap: string | null;
+    mindMapError: string | null;
 }
 
 const ClipboardIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -21,15 +25,17 @@ const ClipboardIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-const sectionEmojis: { [key: string]: string } = {
-    "الشرح": "📖",
-    "أمثلة": "💡",
-    "ملخص": "📋",
-    "جدول": "📋",
-    "ملاحظات": "✍️",
-    "تحليل نحوي": "🔬",
-    "خطأ شائع للمتحدثين بالعربية": "⚠️",
+const iconClasses = "w-7 h-7 text-amber-400 flex-shrink-0";
+const sectionIcons: { [key: string]: JSX.Element } = {
+    "الشرح": <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25" /></svg>,
+    "أمثلة": <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.311a15.045 15.045 0 01-4.5 0m3.75 2.311a15.045 15.045 0 01-4.5 0M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>,
+    "ملخص": <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 17.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" /></svg>,
+    "جدول": <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M3.375 6.75h17.25m-17.25 10.5h17.25M6.75 3.375h10.5m-10.5 17.25h10.5M3.375 10.125h17.25m-17.25 3.75h17.25M10.125 3.375v17.25m3.75-17.25v17.25" /></svg>,
+    "ملاحظات": <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" /></svg>,
+    "تحليل نحوي": <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>,
+    "خطأ شائع للمتحدثين بالعربية": <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>,
 };
+const fallbackIcon = <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className={iconClasses}><path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg>;
 
 const parseAndRenderLesson = (lessonText: string) => {
     const lines = lessonText.split('\n').filter(line => line.trim() !== '');
@@ -103,8 +109,13 @@ const parseAndRenderLesson = (lessonText: string) => {
         if (subheadingMatch) {
             const fullTitle = subheadingMatch[1];
             const cleanTitle = fullTitle.replace(/\d+\.\s*/, '').trim().replace(/:$/, '');
-            const emoji = sectionEmojis[cleanTitle] || '🔹';
-            content.push(<h3 key={index} className="text-xl md:text-2xl font-semibold text-gray-100 mt-8 mb-4 flex items-center pt-4 border-t border-gray-700">{emoji}<span className="mr-3">{fullTitle}</span></h3>);
+            const icon = sectionIcons[cleanTitle] || fallbackIcon;
+            content.push(
+                <h3 key={index} className="text-xl md:text-2xl font-semibold text-gray-100 mt-8 mb-4 flex items-center gap-3 pt-4 border-t border-gray-700">
+                    {icon}
+                    <span>{fullTitle}</span>
+                </h3>
+            );
             return;
         }
         
@@ -152,6 +163,10 @@ const LessonDisplay: React.FC<LessonDisplayProps> = ({
     isGeneratingDiagram,
     diagram,
     diagramError,
+    onGenerateMindMap,
+    isGeneratingMindMap,
+    mindMap,
+    mindMapError,
 }) => {
     const [copied, setCopied] = useState(false);
     const [showSuccess, setShowSuccess] = useState(true);
@@ -161,6 +176,21 @@ const LessonDisplay: React.FC<LessonDisplayProps> = ({
         const timer = setTimeout(() => setShowSuccess(false), 4000);
         return () => clearTimeout(timer);
     }, [lesson]);
+
+    useEffect(() => {
+        if (diagram || mindMap) {
+             // The mermaid global comes from the script tag in index.html
+            // @ts-ignore
+            if (window.mermaid) {
+                try {
+                    // @ts-ignore
+                    window.mermaid.run();
+                } catch(e) {
+                    console.error("Failed to render mermaid diagram", e);
+                }
+            }
+        }
+    }, [diagram, mindMap]);
 
 
     const handleCopy = () => {
@@ -214,7 +244,15 @@ const LessonDisplay: React.FC<LessonDisplayProps> = ({
                 {diagramError && <ErrorMessage message={diagramError} />}
                 {diagram && (
                      <div className="my-6 p-4 bg-gray-950 rounded-lg border border-gray-700 overflow-x-auto flex justify-center animate-fade-in">
-                        <div key={diagram} className="mermaid">{diagram}</div>
+                        <div className="mermaid">{diagram}</div>
+                    </div>
+                )}
+
+                {isGeneratingMindMap && <LoadingSpinner />}
+                {mindMapError && <ErrorMessage message={mindMapError} />}
+                {mindMap && (
+                     <div className="my-6 p-4 bg-gray-950 rounded-lg border border-gray-700 overflow-x-auto flex justify-center animate-fade-in">
+                        <div className="mermaid">{mindMap}</div>
                     </div>
                 )}
                 
@@ -243,6 +281,19 @@ const LessonDisplay: React.FC<LessonDisplayProps> = ({
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 10.5H21A7.5 7.5 0 0 0 13.5 3v7.5Z" />
                             </svg>
                             <span>عرض القاعدة كمخطط</span>
+                        </button>
+                    )}
+
+                    {!isGeneratingMindMap && !mindMap && (
+                        <button
+                            onClick={onGenerateMindMap}
+                            disabled={isGeneratingMindMap}
+                            className="bg-purple-700 hover:bg-purple-800 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-colors duration-300 flex items-center justify-center w-full sm:w-auto gap-2"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 3v11.25A2.25 2.25 0 006 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0118 16.5h-2.25m-7.5 0h7.5m-7.5 0l-1.125-1.5M12 16.5v2.25m0 0l1.125 1.5m-1.125-1.5l-1.125 1.5M3.75 12h16.5m-16.5 0l1.125-1.5m14.25 1.5l-1.125-1.5M3.75 12l-1.125-1.5m16.5 1.5l1.125-1.5" />
+                            </svg>
+                            <span>إنشاء خريطة ذهنية</span>
                         </button>
                     )}
                 </div>
