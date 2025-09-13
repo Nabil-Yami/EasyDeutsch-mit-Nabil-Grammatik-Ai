@@ -1,16 +1,13 @@
 import React from 'react';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import Header from './components/Header';
 import TopicInput from './components/TopicInput';
 import LessonDisplay from './components/LessonDisplay';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorMessage from './components/ErrorMessage';
-import Login from './components/Login'; // Import the new Login component
 import { generateGermanGrammarLesson, elaborateOnExamples, generateDiagram } from './services/geminiService';
 
 const App: React.FC = () => {
-    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => localStorage.getItem('isLoggedIn') === 'true');
-    const [userName, setUserName] = useState<string | null>(() => localStorage.getItem('userName'));
     const [lesson, setLesson] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
@@ -90,51 +87,9 @@ const App: React.FC = () => {
         }
     }, [currentTopic]);
 
-    const handleLoginSuccess = (name: string, email: string) => {
-        // --- Backend Simulation Logic ---
-        // 1. Get current list of users from localStorage
-        const usersJSON = localStorage.getItem('registeredUsers');
-        const users = usersJSON ? JSON.parse(usersJSON) : [];
-
-        // 2. Check if user already exists
-        const userExists = users.some((user: { email: string }) => user.email === email);
-        
-        // 3. If not, add them to the list
-        if (!userExists) {
-            users.push({ name, email });
-            localStorage.setItem('registeredUsers', JSON.stringify(users));
-        }
-        // --- End of Simulation ---
-
-        // Set current user session
-        localStorage.setItem('isLoggedIn', 'true');
-        localStorage.setItem('userName', name);
-        setIsLoggedIn(true);
-        setUserName(name);
-    };
-
-    const handleLogout = () => {
-        localStorage.removeItem('isLoggedIn');
-        localStorage.removeItem('userName');
-        setIsLoggedIn(false);
-        setUserName(null);
-        // Reset app state on logout
-        setLesson(null);
-        setCurrentTopic(null);
-        setElaboration(null);
-        setError(null);
-        setElaborationError(null);
-        setDiagram(null);
-        setDiagramError(null);
-    };
-
-    if (!isLoggedIn) {
-        return <Login onLoginSuccess={handleLoginSuccess} />;
-    }
-
     return (
         <div className="min-h-screen bg-gray-950 text-white flex flex-col items-center">
-            <Header onLogout={handleLogout} userName={userName} />
+            <Header />
             <main className="w-full max-w-4xl flex flex-col items-center p-4 sm:p-6 lg:p-8">
                 <TopicInput onGenerate={handleGenerateLesson} isLoading={isLoading} />
                 <div className="w-full mt-8">
